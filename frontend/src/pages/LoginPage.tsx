@@ -1,9 +1,152 @@
+import { useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import mainLogo from "../public/images/main_logo.svg";
+import { useAuth } from "../contexts/AuthContext";
+import { authApi } from "../services/authApi";
+import { handleApiError } from "../utils/errorHandler";
+
+declare global {
+  interface Window {
+    google?: {
+      accounts: {
+        id: {
+          initialize: (config: {
+            client_id: string;
+            callback: (response: { credential: string }) => void;
+          }) => void;
+          renderButton: (element: HTMLElement, config: object) => void;
+          prompt: () => void;
+        };
+      };
+    };
+  }
+}
 
 function LoginPage() {
+  const navigate = useNavigate();
+  const { login, isAuthenticated } = useAuth();
+  const buttonRef = useRef<HTMLDivElement>(null);
+  const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || "";
+
+  // Debug: Log the client ID (remove in production)
+  useEffect(() => {
+    console.log("Google Client ID:", googleClientId ? "Loaded" : "Missing");
+    console.log("Full Client ID:", googleClientId);
+    console.log(
+      "Expected Client ID:",
+      "907137476909-4shdo7juf91to90e6sftk4nop5u4ck52.apps.googleusercontent.com"
+    );
+    if (!googleClientId) {
+      console.error("VITE_GOOGLE_CLIENT_ID is not set!");
+    } else if (
+      googleClientId !==
+      "907137476909-4shdo7juf91to90e6sftk4nop5u4ck52.apps.googleusercontent.com"
+    ) {
+      console.warn("Client ID mismatch! Current:", googleClientId);
+    }
+  }, [googleClientId]);
+
+  useEffect(() => {
+    // Redirect if already authenticated
+    if (isAuthenticated) {
+      navigate("/");
+      return;
+    }
+
+    // Load Google Identity Services script
+    if (!window.google && googleClientId) {
+      const script = document.createElement("script");
+      script.src = "https://accounts.google.com/gsi/client";
+      script.async = true;
+      script.defer = true;
+      script.onload = () => {
+        initializeGoogleSignIn();
+      };
+      document.body.appendChild(script);
+    } else if (window.google && googleClientId) {
+      initializeGoogleSignIn();
+    }
+  }, [isAuthenticated, navigate, googleClientId]);
+
+  const initializeGoogleSignIn = () => {
+    if (!window.google || !buttonRef.current || !googleClientId) {
+      console.error("Cannot initialize Google Sign-In:", {
+        hasGoogle: !!window.google,
+        hasButtonRef: !!buttonRef.current,
+        hasClientId: !!googleClientId,
+        clientId: googleClientId,
+      });
+      return;
+    }
+
+    // Debug: Log current origin for troubleshooting
+    console.log("=== Google OAuth Debug Info ===");
+    console.log("Current Origin:", window.location.origin);
+    console.log("Current URL:", window.location.href);
+    console.log("Protocol:", window.location.protocol);
+    console.log("Host:", window.location.host);
+    console.log("Client ID:", googleClientId);
+    console.log("=================================");
+
+    console.log("Initializing Google Sign-In with Client ID:", googleClientId);
+    window.google.accounts.id.initialize({
+      client_id: googleClientId,
+      callback: handleCredentialResponse,
+    });
+
+    if (buttonRef.current) {
+      window.google.accounts.id.renderButton(buttonRef.current, {
+        theme: "outline",
+        size: "large",
+        width: 300,
+        text: "signin_with",
+      });
+    }
+  };
+
+  const handleCredentialResponse = async (response: { credential: string }) => {
+    try {
+      console.log("=== Google OAuth Callback ===");
+      console.log("Received Google credential");
+      console.log("Token length:", response.credential?.length || 0);
+      console.log(
+        "Token preview:",
+        response.credential?.substring(0, 50) + "..."
+      );
+      console.log("Current origin:", window.location.origin);
+      console.log("API Base URL:", import.meta.env.VITE_API_BASE_URL);
+      console.log("Sending to backend...");
+
+      const result = await authApi.loginWithGoogle(response.credential);
+      console.log("Login successful!");
+      login(result.access_token, result.user);
+      navigate("/");
+    } catch (err) {
+      console.error("=== Login Error Details ===");
+      console.error("Error:", err);
+      console.error(
+        "Error type:",
+        err instanceof Error ? err.constructor.name : typeof err
+      );
+      if (err instanceof Error) {
+        console.error("Error message:", err.message);
+        console.error("Error stack:", err.stack);
+      }
+      const errorMessage = handleApiError(err);
+      console.error("Formatted error:", errorMessage);
+      alert(
+        errorMessage.message ||
+          "Login failed. Please check the console for details and try again."
+      );
+    }
+  };
+
   const handleGoogleStart = () => {
-    // Placeholder for Google sign-in; backend/auth can be wired later
-    console.log("Start with Google");
+    if (window.google) {
+      window.google.accounts.id.prompt();
+    } else {
+      alert("Google Sign-In is not available. Please check your connection.");
+    }
   };
 
   return (
@@ -28,14 +171,18 @@ function LoginPage() {
 
       {/* CTA button */}
       <footer className="flex-shrink-0 px-6 pb-10 pt-2 safe-area-bottom">
-        <button
-          type="button"
-          onClick={handleGoogleStart}
-          className="w-full flex items-center justify-center gap-3 py-4 px-6 rounded-2xl bg-[#28D863] text-white font-medium text-base shadow-sm hover:bg-[#22c259] active:scale-[0.98] transition-all duration-200"
-        >
-          <GoogleIcon className="w-5 h-5 flex-shrink-0" />
-          Start with Google
-        </button>
+        {googleClientId ? (
+          <div ref={buttonRef} className="w-full"></div>
+        ) : (
+          <button
+            type="button"
+            onClick={handleGoogleStart}
+            className="w-full flex items-center justify-center gap-3 py-4 px-6 rounded-2xl bg-[#28D863] text-white font-medium text-base shadow-sm hover:bg-[#22c259] active:scale-[0.98] transition-all duration-200"
+          >
+            <GoogleIcon className="w-5 h-5 flex-shrink-0" />
+            Start with Google
+          </button>
+        )}
       </footer>
     </div>
   );
@@ -63,19 +210,5 @@ function GoogleIcon({ className }: { className?: string }) {
     </svg>
   );
 }
-
-const styles: Record<string, React.CSSProperties> = {
-  container: {
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    justifyContent: "center",
-    minHeight: "60vh",
-  },
-  title: {
-    fontSize: "2rem",
-    color: "#1a1a2e",
-  },
-};
 
 export default LoginPage;

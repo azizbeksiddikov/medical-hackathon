@@ -15,8 +15,20 @@ import myIconActive from "../public/images/user_profile_active.svg";
 
 const navItems = [
   { path: "/", label: "Home", icon: homeIcon, iconActive: homeIconActive },
-  { path: "/hospitals", label: "Hospital", icon: hospitalIcon, iconActive: hospitalIconActive },
-  { path: "/reports", label: "Report", icon: reportIcon, iconActive: reportIconActive, iconAlert: reportIconAlert, iconAlertActive: reportIconAlertActive },
+  {
+    path: "/hospitals",
+    label: "Hospital",
+    icon: hospitalIcon,
+    iconActive: hospitalIconActive,
+  },
+  {
+    path: "/reports",
+    label: "Report",
+    icon: reportIcon,
+    iconActive: reportIconActive,
+    iconAlert: reportIconAlert,
+    iconAlertActive: reportIconAlertActive,
+  },
   { path: "/profile", label: "My", icon: myIcon, iconActive: myIconActive },
 ];
 
@@ -51,8 +63,14 @@ function Navigation() {
               >
                 {({ isActive }) => {
                   let iconSrc = isActive ? item.iconActive : item.icon;
-                  if (item.label === "Report" && hasNotifications && item.iconAlert) {
-                    iconSrc = isActive ? (item.iconAlertActive || item.iconActive) : item.iconAlert;
+                  if (
+                    item.label === "Report" &&
+                    hasNotifications &&
+                    item.iconAlert
+                  ) {
+                    iconSrc = isActive
+                      ? item.iconAlertActive || item.iconActive
+                      : item.iconAlert;
                   }
                   return (
                     <>
@@ -121,8 +139,14 @@ function Navigation() {
               >
                 {({ isActive }) => {
                   let iconSrc = isActive ? item.iconActive : item.icon;
-                  if (item.label === "Report" && hasNotifications && item.iconAlert) {
-                    iconSrc = isActive ? (item.iconAlertActive || item.iconActive) : item.iconAlert;
+                  if (
+                    item.label === "Report" &&
+                    hasNotifications &&
+                    item.iconAlert
+                  ) {
+                    iconSrc = isActive
+                      ? item.iconAlertActive || item.iconActive
+                      : item.iconAlert;
                   }
                   return (
                     <>
