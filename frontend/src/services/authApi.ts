@@ -1,11 +1,25 @@
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "/api";
+// Use localhost for local development, otherwise use the configured URL
+const getApiBaseUrl = () => {
+  const envUrl = import.meta.env.VITE_API_BASE_URL;
+  // If running on localhost, use local backend
+  if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+    return 'http://localhost:9090/api';
+  }
+  // Ensure the URL ends with /api
+  if (envUrl) {
+    return envUrl.endsWith('/api') ? envUrl : `${envUrl}/api`;
+  }
+  return "/api";
+};
+
+const API_BASE_URL = getApiBaseUrl();
 
 interface LoginResponse {
   access_token: string;
   token_type: string;
   is_new_user: boolean;
   user: {
-    id: string;
+    id: number;
     email: string;
     name: string;
     picture?: string;
@@ -26,7 +40,7 @@ interface RegisterResponse {
   access_token: string;
   token_type: string;
   user: {
-    id: string;
+    id: number;
     email: string;
     name: string;
     picture?: string;
@@ -48,7 +62,12 @@ export const authApi = {
       throw new Error(errorData.detail || `Login failed: ${response.status}`);
     }
 
-    return response.json();
+    const data = await response.json();
+    // Ensure user.id is a number (backend returns int)
+    if (data.user && typeof data.user.id === 'string') {
+      data.user.id = parseInt(data.user.id, 10);
+    }
+    return data;
   },
 
   async registerWithGoogle(
@@ -80,7 +99,12 @@ export const authApi = {
       throw new Error(errorData.detail || `Registration failed: ${response.status}`);
     }
 
-    return response.json();
+    const data = await response.json();
+    // Ensure user.id is a number (backend returns int)
+    if (data.user && typeof data.user.id === 'string') {
+      data.user.id = parseInt(data.user.id, 10);
+    }
+    return data;
   },
 
   async logout(token: string): Promise<void> {

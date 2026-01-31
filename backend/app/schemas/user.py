@@ -8,7 +8,7 @@ class GoogleAuthRequest(BaseModel):
 
 
 class UserResponse(BaseModel):
-    id: str
+    id: int
     email: str
     name: Optional[str] = None
     picture: Optional[str] = None

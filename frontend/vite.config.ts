@@ -7,6 +7,14 @@ export default defineConfig({
   server: {
     host: "0.0.0.0",
     port: 5173,
+    allowedHosts: [
+      "www.halalhaven.kr",
+      "halalhaven.kr",
+      "www.halalhave.kr",
+      "halalhave.kr",
+      "localhost",
+      "127.0.0.1",
+    ],
     watch: {
       usePolling: true,
     },

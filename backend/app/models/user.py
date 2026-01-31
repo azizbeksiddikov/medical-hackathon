@@ -1,13 +1,12 @@
-from sqlalchemy import Column, String, DateTime, Boolean
+from sqlalchemy import Column, String, DateTime, Boolean, Integer
 from sqlalchemy.sql import func
 from app.database import Base
-import uuid
 
 
 class User(Base):
     __tablename__ = "users"
 
-    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     google_id = Column(String(255), unique=True, nullable=True)
     email = Column(String(255), unique=True, nullable=False)
     name = Column(String(255), nullable=True)

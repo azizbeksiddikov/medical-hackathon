@@ -1,4 +1,18 @@
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "/api";
+// Use localhost for local development, otherwise use the configured URL
+const getApiBaseUrl = () => {
+  const envUrl = import.meta.env.VITE_API_BASE_URL;
+  // If running on localhost, use local backend
+  if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+    return 'http://localhost:9090/api';
+  }
+  // Ensure the URL ends with /api
+  if (envUrl) {
+    return envUrl.endsWith('/api') ? envUrl : `${envUrl}/api`;
+  }
+  return "/api";
+};
+
+const API_BASE_URL = getApiBaseUrl();
 
 export interface ExtractedReport {
   disease_name: string | null;
