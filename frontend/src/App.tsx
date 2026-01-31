@@ -1,46 +1,8 @@
-import mainLogo from "./public/images/main_logo.svg";
+import { RouterProvider } from "react-router-dom";
+import { router } from "./router/index.tsx";
 
 function App() {
-  const handleGoogleStart = () => {
-    // Placeholder for Google sign-in; backend/auth can be wired later
-    console.log("Start with Google");
-  };
-
-  return (
-    <div className="min-h-screen bg-white flex flex-col font-sans antialiased">
-      {/* Status bar (mobile-style) */}
-      <header className="flex-shrink-0 flex items-center justify-between px-6 pt-4 pb-2 safe-area-top">
-        <span className="text-[15px] font-medium text-black">9:41</span>
-      </header>
-
-      {/* Main content - centered */}
-      <main className="flex-1 flex flex-col items-center justify-center px-6 pt-4 pb-8">
-        <img
-          src={mainLogo}
-          alt="Medi Port"
-          className="w-[193px] h-[213px] object-contain mb-8"
-        />
-        <h1 className="text-[28px] font-bold tracking-[0.08em] uppercase text-[#28D863] mb-2">
-          MEDI PORT
-        </h1>
-        <p className="text-base text-black/90">
-          Your healthcare guide
-        </p>
-      </main>
-
-      {/* CTA button */}
-      <footer className="flex-shrink-0 px-6 pb-10 pt-2 safe-area-bottom">
-        <button
-          type="button"
-          onClick={handleGoogleStart}
-          className="w-full flex items-center justify-center gap-3 py-4 px-6 rounded-2xl bg-[#28D863] text-white font-medium text-base shadow-sm hover:bg-[#22c259] active:scale-[0.98] transition-all duration-200"
-        >
-          <GoogleIcon className="w-5 h-5 flex-shrink-0" />
-          Start with Google
-        </button>
-      </footer>
-    </div>
-  );
+  return <RouterProvider router={router} />;
 }
 
 function GoogleIcon({ className }: { className?: string }) {
