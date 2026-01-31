@@ -2,15 +2,28 @@ import { useState } from "react";
 import { NavLink } from "react-router-dom";
 import smallLogo from "../public/images/small_logo.svg";
 
+import homeIcon from "../public/images/shopping_cart.svg";
+import homeIconActive from "../public/images/shopping_cart_active.svg";
+import hospitalIcon from "../public/images/calendar.svg";
+import hospitalIconActive from "../public/images/calendar_active.svg";
+import reportIcon from "../public/images/notification_no_alert.svg";
+import reportIconActive from "../public/images/notification_no_alert_active.svg";
+import reportIconAlert from "../public/images/notification.svg";
+import reportIconAlertActive from "../public/images/notification_active.svg";
+import myIcon from "../public/images/user_profile.svg";
+import myIconActive from "../public/images/user_profile_active.svg";
+
 const navItems = [
-  { path: "/hospitals", label: "Hospitals" },
-  { path: "/reports", label: "Reports" },
-  { path: "/profile", label: "Profile" },
-  { path: "/login", label: "Login" },
+  { path: "/", label: "Home", icon: homeIcon, iconActive: homeIconActive },
+  { path: "/hospitals", label: "Hospital", icon: hospitalIcon, iconActive: hospitalIconActive },
+  { path: "/reports", label: "Report", icon: reportIcon, iconActive: reportIconActive, iconAlert: reportIconAlert, iconAlertActive: reportIconAlertActive },
+  { path: "/profile", label: "My", icon: myIcon, iconActive: myIconActive },
 ];
 
 function Navigation() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  // TODO: Connect this to actual notification state
+  const hasNotifications = true;
 
   return (
     <>
@@ -18,7 +31,7 @@ function Navigation() {
         {/* Logo & Brand */}
         <div className="flex items-center gap-3">
           <img src={smallLogo} alt="Logo" className="w-9 h-9" />
-          <span className="text-xl font-bold text-[#22DE61]">MediPort</span>
+          <span className="text-xl font-bold text-primary">MediPort</span>
         </div>
 
         {/* Desktop Navigation - hidden on mobile, flex on md+ */}
@@ -27,15 +40,27 @@ function Navigation() {
             <li key={item.path}>
               <NavLink
                 to={item.path}
+                end={item.path === "/"}
                 className={({ isActive }) =>
-                  `block px-4 py-2 rounded-lg text-sm transition-all ${
+                  `flex items-center gap-2 px-4 py-2 rounded-lg text-sm transition-all ${
                     isActive
-                      ? "text-[#22DE61] font-semibold bg-[#E8FBE8]"
-                      : "text-gray-500 font-medium hover:bg-gray-100"
+                      ? "text-primary font-semibold bg-primary/10"
+                      : "text-gray font-medium hover:bg-gray-100"
                   }`
                 }
               >
-                {item.label}
+                {({ isActive }) => {
+                  let iconSrc = isActive ? item.iconActive : item.icon;
+                  if (item.label === "Report" && hasNotifications && item.iconAlert) {
+                    iconSrc = isActive ? (item.iconAlertActive || item.iconActive) : item.iconAlert;
+                  }
+                  return (
+                    <>
+                      <img src={iconSrc} alt={item.label} className="w-5 h-5" />
+                      {item.label}
+                    </>
+                  );
+                }}
               </NavLink>
             </li>
           ))}
@@ -84,16 +109,28 @@ function Navigation() {
             <li key={item.path}>
               <NavLink
                 to={item.path}
+                end={item.path === "/"}
                 onClick={() => setIsMenuOpen(false)}
                 className={({ isActive }) =>
-                  `block px-4 py-3 rounded-xl text-base transition-all ${
+                  `flex items-center gap-3 px-4 py-3 rounded-xl text-base transition-all ${
                     isActive
-                      ? "text-[#22DE61] font-semibold bg-[#E8FBE8]"
+                      ? "text-primary font-semibold bg-primary/10"
                       : "text-gray-800 font-medium bg-gray-100"
                   }`
                 }
               >
-                {item.label}
+                {({ isActive }) => {
+                  let iconSrc = isActive ? item.iconActive : item.icon;
+                  if (item.label === "Report" && hasNotifications && item.iconAlert) {
+                    iconSrc = isActive ? (item.iconAlertActive || item.iconActive) : item.iconAlert;
+                  }
+                  return (
+                    <>
+                      <img src={iconSrc} alt={item.label} className="w-5 h-5" />
+                      {item.label}
+                    </>
+                  );
+                }}
               </NavLink>
             </li>
           ))}
