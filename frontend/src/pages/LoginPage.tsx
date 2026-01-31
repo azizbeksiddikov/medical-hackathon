@@ -1,4 +1,4 @@
-import mainLogo from "./public/images/main_logo.svg";
+import mainLogo from "../public/images/main_logo.svg";
 
 function LoginPage() {
   const handleGoogleStart = () => {
