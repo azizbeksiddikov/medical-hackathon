@@ -14,6 +14,8 @@ export default defineConfig({
       "halalhave.kr",
       "localhost",
       "127.0.0.1",
+      "mediport.azbek.me",
+      "152.42.238.178",
     ],
     watch: {
       usePolling: true,
