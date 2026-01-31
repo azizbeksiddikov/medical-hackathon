@@ -23,7 +23,7 @@ const baseNavItems = [
   //   iconActive: hospitalIconActive,
   // },
   {
-    path: "/reports",
+    path: "/app/reports",
     label: "Report",
     icon: reportIcon,
     iconActive: reportIconActive,
@@ -42,7 +42,7 @@ function Navigation() {
     ...baseNavItems,
     isAuthenticated
       ? {
-          path: "/profile",
+          path: "/app/profile",
           label: "My",
           icon: myIcon,
           iconActive: myIconActive,
@@ -70,7 +70,7 @@ function Navigation() {
             <li key={item.path}>
               <NavLink
                 to={item.path}
-                end={item.path === "/"}
+                end={item.path === "/app"}
                 className={({ isActive }) =>
                   `flex items-center gap-2 px-4 py-2 rounded-lg text-sm transition-all ${
                     isActive
