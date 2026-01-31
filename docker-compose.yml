@@ -1,0 +1,27 @@
+services:
+  frontend:
+    image: ascent-frontend
+    container_name: ascent-frontend
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_API_BASE_URL=http://localhost:9090
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    depends_on:
+      - backend
+
+  backend:
+    image: ascent-backend
+    container_name: ascent-backend
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./backend:/app
