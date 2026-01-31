@@ -1,20 +1,29 @@
-// Use localhost for local development, otherwise use the configured URL
+// Get the base URL and append /api for API calls
 const getApiBaseUrl = () => {
   const envUrl = import.meta.env.VITE_API_BASE_URL;
-  // If running on localhost, use local backend
-  if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-    return 'http://localhost:9090/api';
-  }
-  // Ensure the URL ends with /api
+  // Use env variable if set, otherwise fallback to localhost for development
   if (envUrl) {
-    return envUrl.endsWith('/api') ? envUrl : `${envUrl}/api`;
+    return `${envUrl}/api`;
+  }
+  // Fallback for local development
+  if (
+    window.location.hostname === "localhost" ||
+    window.location.hostname === "127.0.0.1"
+  ) {
+    return "http://localhost:9090/api";
   }
   return "/api";
 };
 
 const API_BASE_URL = getApiBaseUrl();
 
+export type ReportType =
+  | "prescription"
+  | "medical_certificate"
+  | "examination_report";
+
 export interface ExtractedReport {
+  report_type: ReportType | null; // Detected report type from image analysis
   disease_name: string | null;
   disease_icd_code: string | null;
   medicine_name: string | null;
@@ -24,6 +33,7 @@ export interface ExtractedReport {
 
 export interface SavedReport {
   id: string;
+  report_type: ReportType;
   disease_name: string | null;
   disease_icd_code: string | null;
   medicine_name: string | null;

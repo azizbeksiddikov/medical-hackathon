@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, Union
 from datetime import datetime
 
 
@@ -8,7 +8,7 @@ class GoogleAuthRequest(BaseModel):
 
 
 class UserResponse(BaseModel):
-    id: int
+    id: Union[int, str]  # Support both int and UUID string IDs
     email: str
     name: Optional[str] = None
     picture: Optional[str] = None

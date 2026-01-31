@@ -2,9 +2,12 @@ import { createBrowserRouter } from "react-router-dom";
 import Layout from "../components/Layout.tsx";
 import LoginPage from "../pages/LoginPage.tsx";
 import OnboardingPage from "../pages/OnboardingPage.tsx";
-import HospitalsPage from "../pages/HospitalsPage.tsx";
-import HospitalDetailPage from "../pages/HospitalDetailPage.tsx";
+// import HospitalsPage from "../pages/HospitalsPage.tsx";
+// import HospitalDetailPage from "../pages/HospitalDetailPage.tsx";
+import HomePage from "../pages/HomePage.tsx";
 import ReportsPage from "../pages/ReportsPage.tsx";
+import ReportTypePage from "../pages/ReportTypePage.tsx";
+import ReportDetailPage from "../pages/ReportDetailPage.tsx";
 import AddReportPage from "../pages/AddReportPage.tsx";
 import ProfilePage from "../pages/ProfilePage.tsx";
 
@@ -26,19 +29,27 @@ export const router = createBrowserRouter([
     children: [
       {
         index: true,
-        element: <HospitalsPage />,
+        element: <HomePage />,
       },
-      {
-        path: "hospitals",
-        element: <HospitalsPage />,
-      },
-      {
-        path: "hospital/:id",
-        element: <HospitalDetailPage />,
-      },
+      // {
+      //   path: "hospitals",
+      //   element: <HospitalsPage />,
+      // },
+      // {
+      //   path: "hospital/:id",
+      //   element: <HospitalDetailPage />,
+      // },
       {
         path: "reports",
         element: <ReportsPage />,
+      },
+      {
+        path: "reports/type/:type",
+        element: <ReportTypePage />,
+      },
+      {
+        path: "reports/:id",
+        element: <ReportDetailPage />,
       },
       {
         path: "reports/add",

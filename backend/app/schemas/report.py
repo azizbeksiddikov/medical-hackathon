@@ -1,9 +1,17 @@
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, Literal
 from datetime import datetime
+from enum import Enum
+
+
+class ReportTypeEnum(str, Enum):
+    PRESCRIPTION = "prescription"  # 처방전
+    MEDICAL_CERTIFICATE = "medical_certificate"  # 진단서
+    EXAMINATION_REPORT = "examination_report"  # 검진서
 
 
 class ExtractedReport(BaseModel):
+    report_type: Optional[str] = None  # Detected report type: prescription, medical_certificate, examination_report
     disease_name: Optional[str] = None
     disease_icd_code: Optional[str] = None
     medicine_name: Optional[str] = None
@@ -12,6 +20,7 @@ class ExtractedReport(BaseModel):
 
 
 class ReportCreate(BaseModel):
+    report_type: ReportTypeEnum = ReportTypeEnum.PRESCRIPTION
     disease_name: Optional[str] = None
     disease_icd_code: Optional[str] = None
     medicine_name: Optional[str] = None
@@ -24,6 +33,7 @@ class ReportCreate(BaseModel):
 
 class ReportResponse(BaseModel):
     id: str
+    report_type: str = "prescription"
     disease_name: Optional[str] = None
     disease_icd_code: Optional[str] = None
     medicine_name: Optional[str] = None

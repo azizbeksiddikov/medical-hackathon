@@ -23,25 +23,31 @@ def call_groq_vlm(image_data_url: str) -> Optional[str]:
     if not api_key:
         raise ValueError("GROQ_API_KEY environment variable is not set")
     
-    # Optimized medical prescription analysis prompt
+    # Optimized medical document analysis prompt
     messages = [
         {
             "role": "user",
             "content": [
                 {
                     "type": "text",
-                    "text": """Please analyze this medical prescription image carefully and provide a detailed description. Focus on:
+                    "text": """Please analyze this medical document image carefully and provide a detailed description. 
 
+FIRST, identify the document type:
+- **Prescription (처방전)**: Contains medication orders, drug names, dosages, pharmacy instructions
+- **Medical Certificate (진단서)**: Official diagnosis certificate, often includes ICD codes, doctor's statement about medical condition
+- **Medical Examination Report (검진서)**: Health checkup results, lab test results, screening findings
+
+Then focus on extracting:
 1. Patient information (name, age, ID if visible)
-2. Prescription date
+2. Document date
 3. Doctor/physician name and credentials
-4. All medications prescribed (names, dosages, frequencies)
+4. All medications prescribed (if prescription)
 5. Medical conditions/diseases mentioned or indicated
-6. Any diagnosis codes (ICD codes) visible on the prescription
-7. Dosage instructions
+6. Any diagnosis codes (ICD codes) visible
+7. Test results (if examination report)
 8. Any other relevant medical information
 
-Please be thorough and extract all text and medical information from the prescription."""
+Please be thorough and extract all text and medical information from the document."""
                 },
                 {
                     "type": "image_url",
@@ -106,17 +112,22 @@ Please be thorough and extract all text and medical information from the prescri
                 "content": [
                     {
                         "type": "text",
-                        "text": """Based on the prescription analysis, please extract and provide the following information in a structured format:
+                        "text": """Based on the document analysis, please extract and provide the following information in a structured format:
+
+**Document Type:** [Identify the type of medical document. Choose ONE from: "prescription", "medical_certificate", or "examination_report". Use these clues:
+- prescription (처방전): Has medication orders, drug names, dosages, pharmacy/Rx instructions
+- medical_certificate (진단서): Official diagnosis document, doctor's certification of medical condition, may have hospital letterhead
+- examination_report (검진서): Health checkup, lab results, test findings, screening report]
 
 **Disease Name:** [The primary medical condition or diagnosis being treated. If multiple conditions, list the main one. If not explicitly stated, infer from the medication prescribed and its common uses.]
 
-**Disease ICD Code:** [The ICD-10 code for the disease/condition. Look for codes on the prescription (format: letter followed by numbers, e.g., R10, K59.0, I10). If not found on prescription, provide the most likely ICD-10 code based on the disease name and medication indication.]
+**Disease ICD Code:** [The ICD-10 code for the disease/condition. Look for codes on the document (format: letter followed by numbers, e.g., R10, K59.0, I10). If not found, provide the most likely ICD-10 code based on the disease name and medication indication.]
 
-**Medicine Name:** [The full name(s) of the medication(s) prescribed. Include generic and brand names if both are present.]
+**Medicine Name:** [The full name(s) of the medication(s) prescribed. Include generic and brand names if both are present. Leave blank if not applicable.]
 
-**Full Description:** [A comprehensive description of the prescription including patient details, medications, dosages, instructions, and any other relevant medical information.]
+**Full Description:** [A comprehensive description of the document including patient details, medications, dosages, instructions, test results, and any other relevant medical information.]
 
-Please be precise and accurate. For ICD codes, use standard ICD-10 format. If an ICD code is not visible on the prescription, infer the most appropriate code based on the medical condition and standard medical coding practices."""
+Please be precise and accurate. For ICD codes, use standard ICD-10 format. If an ICD code is not visible on the document, infer the most appropriate code based on the medical condition and standard medical coding practices."""
                     },
                     {
                         "type": "image_url",
@@ -132,7 +143,7 @@ Please be precise and accurate. For ICD codes, use standard ICD-10 format. If an
             },
             {
                 "role": "user",
-                "content": "Now extract the structured information as requested: Disease Name, Disease ICD Code, Medicine Name, and Full Description."
+                "content": "Now extract the structured information as requested: Document Type, Disease Name, Disease ICD Code, Medicine Name, and Full Description."
             }
         ]
         

@@ -11,9 +11,10 @@ def parse_icd_codes(response_text: str) -> Dict[str, Optional[str]]:
         response_text: Full text response from Groq API
         
     Returns:
-        Dictionary with disease_name, disease_icd_code, medicine_name, full_description
+        Dictionary with report_type, disease_name, disease_icd_code, medicine_name, full_description
     """
     result = {
+        "report_type": None,
         "disease_name": None,
         "disease_icd_code": None,
         "medicine_name": None,
@@ -25,6 +26,47 @@ def parse_icd_codes(response_text: str) -> Dict[str, Optional[str]]:
     
     # Normalize text for better parsing
     normalized_text = response_text.replace('\r\n', '\n').replace('\r', '\n')
+    
+    # Look for document type in structured format
+    doc_type_patterns = [
+        r'\*\*Document Type\*\*[:\s]+["\']?(\w+(?:_\w+)?)["\']?',
+        r'Document Type[:\s]+["\']?(\w+(?:_\w+)?)["\']?',
+        r'Type[:\s]+["\']?(\w+(?:_\w+)?)["\']?',
+    ]
+    
+    valid_types = ['prescription', 'medical_certificate', 'examination_report']
+    
+    for pattern in doc_type_patterns:
+        match = re.search(pattern, normalized_text, re.IGNORECASE | re.MULTILINE)
+        if match:
+            doc_type = match.group(1).strip().lower()
+            # Normalize the document type
+            doc_type = doc_type.replace(' ', '_').replace('-', '_')
+            # Handle variations
+            if 'prescription' in doc_type or 'rx' in doc_type or '처방' in doc_type:
+                result["report_type"] = "prescription"
+                break
+            elif 'certificate' in doc_type or 'diagnosis' in doc_type or '진단' in doc_type:
+                result["report_type"] = "medical_certificate"
+                break
+            elif 'examination' in doc_type or 'checkup' in doc_type or 'report' in doc_type or '검진' in doc_type:
+                result["report_type"] = "examination_report"
+                break
+            elif doc_type in valid_types:
+                result["report_type"] = doc_type
+                break
+    
+    # Fallback: Try to infer document type from content
+    if not result["report_type"]:
+        text_lower = normalized_text.lower()
+        if any(kw in text_lower for kw in ['medication', 'dosage', 'take', 'tablet', 'capsule', 'mg', 'ml', 'pharmacy', 'rx']):
+            result["report_type"] = "prescription"
+        elif any(kw in text_lower for kw in ['certificate', 'certify', 'diagnosis', 'diagnosed with']):
+            result["report_type"] = "medical_certificate"
+        elif any(kw in text_lower for kw in ['test result', 'examination', 'checkup', 'blood test', 'lab result', 'screening']):
+            result["report_type"] = "examination_report"
+        else:
+            result["report_type"] = "prescription"  # Default
     
     # Look for structured format with headers (from improved prompt)
     # Pattern: **Disease Name:** or Disease Name: or Disease:

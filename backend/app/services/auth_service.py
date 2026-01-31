@@ -78,6 +78,16 @@ def get_user_from_token(token: str) -> Optional[Dict]:
     return verify_google_token(token)
 
 
+def is_local_upload(picture_url: Optional[str]) -> bool:
+    """
+    Check if the picture URL is a locally uploaded image (not from Google).
+    """
+    if not picture_url:
+        return False
+    # Local uploads are stored in /uploads/ path
+    return '/uploads/' in picture_url or picture_url.startswith('uploads/')
+
+
 def create_or_update_user(db: Session, user_info: Dict) -> User:
     """
     Create or update user in database based on Google OAuth info.
@@ -92,7 +102,7 @@ def create_or_update_user(db: Session, user_info: Dict) -> User:
     google_id = user_info['google_id']
     email = user_info.get('email')
     name = user_info.get('name')
-    picture_url = user_info.get('picture_url')
+    google_picture_url = user_info.get('picture_url')
     
     # Try to find user by google_id first
     user = db.query(User).filter(User.google_id == google_id).first()
@@ -103,8 +113,10 @@ def create_or_update_user(db: Session, user_info: Dict) -> User:
             user.email = email
         if name and user.name != name:
             user.name = name
-        if picture_url and user.picture_url != picture_url:
-            user.picture_url = picture_url
+        # Only update picture if user doesn't have a local upload
+        # (preserve user-uploaded profile images over Google profile pictures)
+        if google_picture_url and not is_local_upload(user.picture_url):
+            user.picture_url = google_picture_url
     else:
         # Try to find by email if google_id not found
         if email:
@@ -115,15 +127,16 @@ def create_or_update_user(db: Session, user_info: Dict) -> User:
             user.google_id = google_id
             if name:
                 user.name = name
-            if picture_url:
-                user.picture_url = picture_url
+            # Only update picture if user doesn't have a local upload
+            if google_picture_url and not is_local_upload(user.picture_url):
+                user.picture_url = google_picture_url
         else:
             # Create new user
             user = User(
                 google_id=google_id,
                 email=email or "",
                 name=name,
-                picture_url=picture_url
+                picture_url=google_picture_url
             )
             db.add(user)
     
