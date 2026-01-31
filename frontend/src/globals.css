@@ -1,0 +1,6 @@
+@theme {
+  --color-primary: #22de61;
+  --color-primary-dark: #1bc954;
+  --color-danger: #ef4444;
+  --shadow-primary: 0 4px 12px rgba(34, 222, 97, 0.3);
+}

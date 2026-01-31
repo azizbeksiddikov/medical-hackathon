@@ -8,6 +8,12 @@ import ReportsPage from "../pages/ReportsPage.tsx";
 import ProfilePage from "../pages/ProfilePage.tsx";
 
 export const router = createBrowserRouter([
+  // Onboarding - no navigation
+  {
+    path: "/onboarding",
+    element: <OnboardingPage />,
+  },
+  // Main app with navigation
   {
     path: "/",
     element: <Layout />,
@@ -19,10 +25,6 @@ export const router = createBrowserRouter([
       {
         path: "login",
         element: <LoginPage />,
-      },
-      {
-        path: "onboarding",
-        element: <OnboardingPage />,
       },
       {
         path: "hospitals",

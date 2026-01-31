@@ -3,26 +3,25 @@ import Navigation from "./Navigation.tsx";
 
 function Layout() {
   return (
-    <div style={styles.container}>
+    <div
+      style={{
+        minHeight: "100vh",
+        display: "flex",
+        flexDirection: "column",
+      }}
+    >
       <Navigation />
-      <main style={styles.main}>
+      <main
+        style={{
+          flex: 1,
+          display: "flex",
+          flexDirection: "column",
+        }}
+      >
         <Outlet />
       </main>
     </div>
   );
 }
-
-const styles: Record<string, React.CSSProperties> = {
-  container: {
-    minHeight: "100vh",
-    display: "flex",
-    flexDirection: "column",
-  },
-  main: {
-    flex: 1,
-    padding: "24px",
-    backgroundColor: "#f5f5f5",
-  },
-};
 
 export default Layout;
