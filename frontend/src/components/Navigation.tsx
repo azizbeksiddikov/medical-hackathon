@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { NavLink } from "react-router-dom";
+import { useAuth } from "../contexts/AuthContext";
 import smallLogo from "../public/images/small_logo.svg";
 
 import homeIcon from "../public/images/shopping_cart.svg";
@@ -13,7 +14,7 @@ import reportIconAlertActive from "../public/images/notification_active.svg";
 import myIcon from "../public/images/user_profile.svg";
 import myIconActive from "../public/images/user_profile_active.svg";
 
-const navItems = [
+const baseNavItems = [
   { path: "/", label: "Home", icon: homeIcon, iconActive: homeIconActive },
   {
     path: "/hospitals",
@@ -29,13 +30,30 @@ const navItems = [
     iconAlert: reportIconAlert,
     iconAlertActive: reportIconAlertActive,
   },
-  { path: "/profile", label: "My", icon: myIcon, iconActive: myIconActive },
 ];
 
 function Navigation() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const { isAuthenticated } = useAuth();
   // TODO: Connect this to actual notification state
   const hasNotifications = true;
+
+  const navItems = [
+    ...baseNavItems,
+    isAuthenticated
+      ? {
+          path: "/profile",
+          label: "My",
+          icon: myIcon,
+          iconActive: myIconActive,
+        }
+      : {
+          path: "/login",
+          label: "Login",
+          icon: myIcon,
+          iconActive: myIconActive,
+        },
+  ];
 
   return (
     <>

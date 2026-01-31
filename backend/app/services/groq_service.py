@@ -176,6 +176,60 @@ Please be precise and accurate. For ICD codes, use standard ICD-10 format. If an
         
     except requests.exceptions.RequestException as e:
         raise Exception(f"Error calling Groq API: {str(e)}")
+
+
+# Language name mapping for translation prompts
+LANGUAGE_NAMES = {
+    "en": "English",
+    "ko": "Korean",
+    "zh": "Chinese",
+    "ja": "Japanese",
+    "es": "Spanish",
+    "vi": "Vietnamese",
+    "th": "Thai",
+    "ru": "Russian",
+    "ar": "Arabic",
+    "uz": "Uzbek",
+}
+
+
+def translate_with_groq(text: str, target_language: str) -> str:
+    """
+    Translate text to the target language using Groq LLM.
+    
+    Args:
+        text: Text to translate
+        target_language: Target language code (e.g., 'ko', 'zh', 'ja')
+        
+    Returns:
+        Translated text
+    """
+    api_key = os.getenv("GROQ_API_KEY")
+    if not api_key:
+        raise ValueError("GROQ_API_KEY environment variable is not set")
+    
+    language_name = LANGUAGE_NAMES.get(target_language, target_language)
+    
+    messages = [
+        {
+            "role": "system",
+            "content": f"You are a professional medical translator. Translate the following medical text accurately to {language_name}. Preserve medical terminology and ensure the translation is clear and accurate. Only output the translation, nothing else."
+        },
+        {
+            "role": "user",
+            "content": text
+        }
+    ]
+    
+    # Use text-only model for translation
+    payload = {
+        "messages": messages,
+        "model": "llama-3.3-70b-versatile",
+        "temperature": 0.2,
+        "max_completion_tokens": 2048,
+        "top_p": 0.9,
+        "stream": False,
+    }
     
     headers = {
         "Content-Type": "application/json",
@@ -186,31 +240,16 @@ Please be precise and accurate. For ICD codes, use standard ICD-10 format. If an
         response = requests.post(
             GROQ_API_URL,
             headers=headers,
-            json=payload,
-            stream=True
+            json=payload
         )
         response.raise_for_status()
         
-        # Handle streaming response
-        full_content = ""
-        for line in response.iter_lines():
-            if line:
-                line_str = line.decode('utf-8')
-                if line_str.startswith('data: '):
-                    data_str = line_str[6:]  # Remove 'data: ' prefix
-                    if data_str.strip() == '[DONE]':
-                        break
-                    try:
-                        chunk = json.loads(data_str)
-                        if 'choices' in chunk and len(chunk['choices']) > 0:
-                            delta = chunk['choices'][0].get('delta', {})
-                            if 'content' in delta:
-                                full_content += delta['content']
-                    except json.JSONDecodeError:
-                        continue
+        data = response.json()
+        if 'choices' in data and len(data['choices']) > 0:
+            return data['choices'][0]['message']['content'].strip()
         
-        return full_content if full_content else None
+        raise Exception("No translation returned from API")
         
     except requests.exceptions.RequestException as e:
-        raise Exception(f"Error calling Groq API: {str(e)}")
+        raise Exception(f"Error calling Groq API for translation: {str(e)}")
 

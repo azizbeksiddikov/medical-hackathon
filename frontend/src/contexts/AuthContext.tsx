@@ -11,6 +11,15 @@ interface User {
   email: string;
   name: string;
   picture?: string;
+  language?: string;
+  nickname?: string;
+  phone?: string;
+  birth_year?: string;
+  birth_month?: string;
+  birth_day?: string;
+  gender?: string;
+  visit_purpose?: string;
+  onboarding_completed?: boolean;
 }
 
 interface AuthContextType {

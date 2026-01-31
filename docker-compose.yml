@@ -28,7 +28,7 @@ services:
       - "9090:9090"
     volumes:
       - ./backend:/app
-      - ./uploads:/app/uploads
+      - uploads_data:/app/uploads
     env_file:
       - .env
     environment:
@@ -60,7 +60,17 @@ services:
     volumes:
       - mysql_data:/var/lib/mysql
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD:-rootpassword}"]
+      test:
+        [
+          "CMD",
+          "mysqladmin",
+          "ping",
+          "-h",
+          "localhost",
+          "-u",
+          "root",
+          "-p${MYSQL_ROOT_PASSWORD:-rootpassword}",
+        ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -94,3 +104,4 @@ services:
 
 volumes:
   mysql_data:
+  uploads_data:

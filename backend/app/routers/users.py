@@ -1,9 +1,11 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Form, UploadFile, File
 from sqlalchemy.orm import Session
+from typing import Optional
 from app.database import get_db
 from app.models.user import User
 from app.schemas.user import GoogleAuthRequest, TokenResponse, UserResponse, UserUpdate
 from app.services.auth_service import verify_google_token, create_or_update_user
+from app.services.file_service import save_member_image
 from app.utils.jwt_utils import create_access_token
 from app.middleware.auth_middleware import get_current_user_dependency
 
@@ -18,8 +20,8 @@ async def google_login(
     """
     Google OAuth login endpoint.
     Verifies Google ID token and returns JWT access token.
+    Returns is_new_user=True if user needs onboarding.
     """
-    import os
     from app.services.auth_service import GOOGLE_CLIENT_ID
     
     # Log request details for debugging
@@ -41,6 +43,10 @@ async def google_login(
     
     print(f"Token verified successfully for user: {user_info.get('email')}")
     
+    # Check if user already exists
+    existing_user = db.query(User).filter(User.google_id == user_info['google_id']).first()
+    is_new_user = existing_user is None or not existing_user.onboarding_completed
+    
     # Create or update user in database
     user = create_or_update_user(db, user_info)
     
@@ -49,6 +55,66 @@ async def google_login(
     
     return TokenResponse(
         access_token=access_token,
+        is_new_user=is_new_user,
+        user=UserResponse.model_validate(user)
+    )
+
+
+@router.post("/auth/register", response_model=TokenResponse)
+async def register_with_onboarding(
+    google_token: str = Form(...),
+    language: str = Form(...),
+    phone: str = Form(...),
+    nickname: str = Form(...),
+    birth_year: str = Form(...),
+    birth_month: str = Form(...),
+    birth_day: str = Form(...),
+    gender: str = Form(...),
+    visit_purpose: str = Form(...),
+    profile_image: Optional[UploadFile] = File(None),
+    db: Session = Depends(get_db)
+):
+    """
+    Complete registration with Google auth + onboarding data.
+    """
+    # Verify Google token
+    user_info = verify_google_token(google_token)
+    
+    if not user_info:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid Google token"
+        )
+    
+    # Create or get user
+    user = create_or_update_user(db, user_info)
+    
+    # Update with onboarding data
+    user.language = language
+    user.phone = phone
+    user.nickname = nickname
+    user.birth_year = birth_year
+    user.birth_month = birth_month
+    user.birth_day = birth_day
+    user.gender = gender
+    user.visit_purpose = visit_purpose
+    user.onboarding_completed = True
+    
+    # Save profile image if provided
+    if profile_image and profile_image.filename:
+        image_url = await save_member_image(profile_image, user.id)
+        if image_url:
+            user.picture_url = image_url
+    
+    db.commit()
+    db.refresh(user)
+    
+    # Create JWT token
+    access_token = create_access_token(data={"sub": str(user.id)})
+    
+    return TokenResponse(
+        access_token=access_token,
+        is_new_user=False,
         user=UserResponse.model_validate(user)
     )
 

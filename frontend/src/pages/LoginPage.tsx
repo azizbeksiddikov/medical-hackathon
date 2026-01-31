@@ -118,9 +118,23 @@ function LoginPage() {
       console.log("Sending to backend...");
 
       const result = await authApi.loginWithGoogle(response.credential);
-      console.log("Login successful!");
-      login(result.access_token, result.user);
-      navigate("/");
+      console.log("Login response received!", result);
+
+      // Check if this is a new user who needs onboarding
+      if (result.is_new_user) {
+        console.log("New user detected, redirecting to onboarding...");
+        // Navigate to onboarding with the Google credential
+        navigate("/onboarding", {
+          state: {
+            googleCredential: response.credential,
+            googleUser: result.user,
+          },
+        });
+      } else {
+        console.log("Existing user, logging in...");
+        login(result.access_token, result.user);
+        navigate("/");
+      }
     } catch (err) {
       console.error("=== Login Error Details ===");
       console.error("Error:", err);
@@ -150,14 +164,9 @@ function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-white flex flex-col font-sans antialiased">
-      {/* Status bar (mobile-style) */}
-      <header className="flex-shrink-0 flex items-center justify-between px-6 pt-4 pb-2 safe-area-top">
-        <span className="text-[15px] font-medium text-black">9:41</span>
-      </header>
-
+    <div className="h-screen bg-white flex flex-col items-center justify-center font-sans antialiased overflow-hidden px-6">
       {/* Main content - centered */}
-      <main className="flex-1 flex flex-col items-center justify-center px-6 pt-4 pb-8">
+      <div className="flex flex-col items-center -mt-16">
         <img
           src={mainLogo}
           alt="Medi Port"
@@ -166,24 +175,22 @@ function LoginPage() {
         <h1 className="text-[28px] font-bold tracking-[0.08em] uppercase text-[#28D863] mb-2">
           MEDI PORT
         </h1>
-        <p className="text-base text-black/90">Your healthcare guide</p>
-      </main>
+        <p className="text-base text-black/90 mb-12">Your healthcare guide</p>
 
-      {/* CTA button */}
-      <footer className="flex-shrink-0 px-6 pb-10 pt-2 safe-area-bottom">
+        {/* Google Sign-In button - centered */}
         {googleClientId ? (
-          <div ref={buttonRef} className="w-full"></div>
+          <div ref={buttonRef} className="flex justify-center"></div>
         ) : (
           <button
             type="button"
             onClick={handleGoogleStart}
-            className="w-full flex items-center justify-center gap-3 py-4 px-6 rounded-2xl bg-[#28D863] text-white font-medium text-base shadow-sm hover:bg-[#22c259] active:scale-[0.98] transition-all duration-200"
+            className="flex items-center justify-center gap-3 py-4 px-8 rounded-2xl bg-[#28D863] text-white font-medium text-base shadow-sm hover:bg-[#22c259] active:scale-[0.98] transition-all duration-200"
           >
-            <GoogleIcon className="w-5 h-5 flex-shrink-0" />
+            <GoogleIcon className="w-5 h-5 shrink-0" />
             Start with Google
           </button>
         )}
-      </footer>
+      </div>
     </div>
   );
 }

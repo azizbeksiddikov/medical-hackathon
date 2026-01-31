@@ -5,9 +5,15 @@ import OnboardingPage from "../pages/OnboardingPage.tsx";
 import HospitalsPage from "../pages/HospitalsPage.tsx";
 import HospitalDetailPage from "../pages/HospitalDetailPage.tsx";
 import ReportsPage from "../pages/ReportsPage.tsx";
+import AddReportPage from "../pages/AddReportPage.tsx";
 import ProfilePage from "../pages/ProfilePage.tsx";
 
 export const router = createBrowserRouter([
+  // Login - no navigation
+  {
+    path: "/login",
+    element: <LoginPage />,
+  },
   // Onboarding - no navigation
   {
     path: "/onboarding",
@@ -23,10 +29,6 @@ export const router = createBrowserRouter([
         element: <HospitalsPage />,
       },
       {
-        path: "login",
-        element: <LoginPage />,
-      },
-      {
         path: "hospitals",
         element: <HospitalsPage />,
       },
@@ -37,6 +39,10 @@ export const router = createBrowserRouter([
       {
         path: "reports",
         element: <ReportsPage />,
+      },
+      {
+        path: "reports/add",
+        element: <AddReportPage />,
       },
       {
         path: "profile",

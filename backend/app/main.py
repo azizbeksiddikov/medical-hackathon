@@ -1,13 +1,13 @@
-import os
-import base64
-from io import BytesIO
+from pathlib import Path
 from dotenv import load_dotenv
-from fastapi import FastAPI, UploadFile, File, HTTPException
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from PIL import Image
+from fastapi.staticfiles import StaticFiles
 
-from app.services.groq_service import call_groq_vlm
-from app.utils.icd_parser import parse_icd_codes
+from app.routers import users
+from app.routers import reports
+from app.database import init_db
+from app.services.file_service import ensure_directories
 
 # Load environment variables
 load_dotenv()
@@ -21,11 +21,34 @@ app = FastAPI(
 # CORS configuration for development
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    allow_origins=["http://localhost:5173", "https://www.halalhaven.kr"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Include routers
+app.include_router(users.router)
+app.include_router(reports.router)
+
+
+@app.on_event("startup")
+async def startup_event():
+    """Initialize database tables and upload directories on startup."""
+    try:
+        init_db()
+        print("Database tables initialized successfully")
+    except Exception as e:
+        print(f"Error initializing database: {e}")
+    
+    # Create upload directories
+    ensure_directories()
+    print("Upload directories initialized")
+    
+    # Mount static files for uploads
+    uploads_path = Path("/app/uploads")
+    if uploads_path.exists():
+        app.mount("/uploads", StaticFiles(directory=str(uploads_path)), name="uploads")
 
 
 @app.get("/health")
@@ -38,93 +61,3 @@ def health_check():
 def hello():
     """Hello endpoint."""
     return {"message": "Hello from ASCENT"}
-
-
-@app.post("/extract-icd")
-async def extract_icd(file: UploadFile = File(...)):
-    """
-    Extract ICD codes from prescription image.
-    
-    Args:
-        file: Image file (prescription image)
-        
-    Returns:
-        JSON with disease_name, disease_icd_code, medicine_name, full_description
-    """
-    # Validate file type
-    if not file.content_type or not file.content_type.startswith('image/'):
-        raise HTTPException(
-            status_code=400,
-            detail="File must be an image"
-        )
-    
-    try:
-        # Read image file
-        image_bytes = await file.read()
-        
-        # Validate image using Pillow
-        try:
-            image = Image.open(BytesIO(image_bytes))
-            image.verify()  # Verify it's a valid image
-        except Exception as e:
-            raise HTTPException(
-                status_code=400,
-                detail=f"Invalid image file: {str(e)}"
-            )
-        
-        # Reopen image after verification (verify() closes it)
-        image = Image.open(BytesIO(image_bytes))
-        
-        # Convert image to base64 data URL
-        buffered = BytesIO()
-        # Convert to RGB if necessary (for PNG with transparency)
-        if image.mode in ('RGBA', 'LA', 'P'):
-            rgb_image = Image.new('RGB', image.size, (255, 255, 255))
-            if image.mode == 'P':
-                image = image.convert('RGBA')
-            rgb_image.paste(image, mask=image.split()[-1] if image.mode == 'RGBA' else None)
-            image = rgb_image
-        
-        # Determine format
-        image_format = image.format or 'JPEG'
-        if image_format not in ['JPEG', 'PNG', 'WEBP']:
-            image_format = 'JPEG'
-        
-        image.save(buffered, format=image_format)
-        image_base64 = base64.b64encode(buffered.getvalue()).decode('utf-8')
-        
-        # Create data URL
-        mime_type = f"image/{image_format.lower()}"
-        image_data_url = f"data:{mime_type};base64,{image_base64}"
-        
-        # Call Groq API
-        try:
-            groq_response = call_groq_vlm(image_data_url)
-            if not groq_response:
-                raise HTTPException(
-                    status_code=500,
-                    detail="No response from Groq API"
-                )
-        except ValueError as e:
-            raise HTTPException(
-                status_code=500,
-                detail=str(e)
-            )
-        except Exception as e:
-            raise HTTPException(
-                status_code=500,
-                detail=f"Error calling Groq API: {str(e)}"
-            )
-        
-        # Parse ICD codes from response
-        result = parse_icd_codes(groq_response)
-        
-        return result
-        
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Internal server error: {str(e)}"
-        )

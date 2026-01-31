@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import {
   LanguageSelector,
   PhoneInput,
@@ -10,6 +10,19 @@ import {
   VisitPurposeSelector,
 } from "../libs/components/onboarding";
 import smallLogo from "../public/images/small_logo.svg";
+import { authApi } from "../services/authApi";
+import { useAuth } from "../contexts/AuthContext";
+import { handleApiError } from "../utils/errorHandler";
+
+interface LocationState {
+  googleCredential?: string;
+  googleUser?: {
+    id: string;
+    email: string;
+    name: string;
+    picture?: string;
+  };
+}
 
 const stepTexts = [
   "Choose your language.",
@@ -23,6 +36,8 @@ const stepTexts = [
 
 function OnboardingPage() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const { login } = useAuth();
   const [currentStep, setCurrentStep] = useState(0);
   const [language, setLanguage] = useState("");
   const [phone, setPhone] = useState("");
@@ -32,12 +47,50 @@ function OnboardingPage() {
   const [profileImage, setProfileImage] = useState<File | null>(null);
   const [imageChosen, setImageChosen] = useState(false);
   const [visitPurpose, setVisitPurpose] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleNext = () => {
+  // Get Google credential from navigation state
+  const locationState = location.state as LocationState | null;
+  const googleCredential = locationState?.googleCredential;
+
+  const handleNext = async () => {
     if (currentStep < stepTexts.length - 1) {
       setCurrentStep(currentStep + 1);
     } else {
+      // Final step - complete registration
+      await completeRegistration();
+    }
+  };
+
+  const completeRegistration = async () => {
+    if (!googleCredential) {
+      console.error("No Google credential found");
+      alert("Session expired. Please sign up again.");
+      navigate("/login");
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const result = await authApi.registerWithGoogle(googleCredential, {
+        language,
+        phone,
+        nickname,
+        birthDate,
+        gender,
+        profileImage,
+        visitPurpose,
+      });
+
+      console.log("Registration successful!", result);
+      login(result.access_token, result.user);
       navigate("/");
+    } catch (err) {
+      console.error("Registration error:", err);
+      const errorMessage = handleApiError(err);
+      alert(errorMessage.message || "Registration failed. Please try again.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -181,18 +234,22 @@ function OnboardingPage() {
       <div className="pt-4 shrink-0 w-full max-w-md">
         <button
           onClick={handleNext}
-          disabled={isNextDisabled()}
+          disabled={isNextDisabled() || isSubmitting}
           className={`
             w-full py-4 px-6 text-lg font-semibold text-white bg-primary border-none rounded-2xl 
             cursor-pointer transition-all duration-200 shadow-primary
             ${
-              isNextDisabled()
+              isNextDisabled() || isSubmitting
                 ? "opacity-50 cursor-not-allowed"
                 : "hover:bg-primary-dark active:scale-[0.98]"
             }
           `}
         >
-          Next
+          {isSubmitting
+            ? "Completing..."
+            : currentStep === stepTexts.length - 1
+            ? "Complete"
+            : "Next"}
         </button>
       </div>
     </div>

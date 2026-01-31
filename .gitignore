@@ -31,3 +31,6 @@ Thumbs.db
 
 # Docker volumes (local)
 mysql_data/
+
+
+uploads/
