@@ -10,20 +10,7 @@ function App() {
     <div className="min-h-screen bg-white flex flex-col font-sans antialiased">
       {/* Status bar (mobile-style) */}
       <header className="flex-shrink-0 flex items-center justify-between px-6 pt-4 pb-2 safe-area-top">
-        <span className="text-[15px] font-medium text-black"></span>
-        <div className="flex items-center gap-1.5">
-          <svg className="w-5 h-5 text-black" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
-            <path d="M2 22h20V2H2v20z" fill="none" stroke="currentColor" strokeWidth="1.5" />
-            <path d="M7 8h1v8H7zM10 6h1v10h-1zM13 10h1v6h-1zM16 7h1v9h-1zM19 9h1v7h-1z" fill="currentColor" />
-          </svg>
-          <svg className="w-5 h-5 text-black" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
-            <path d="M5 12.55a11 11 0 0 1 14.08 0M1 9a22 22 0 0 1 22 0M8.5 16.5a6 6 0 0 1 7 0" />
-          </svg>
-          <svg className="w-6 h-6 text-black" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
-            <rect x="2" y="6" width="20" height="12" rx="2" stroke="currentColor" strokeWidth="1.5" fill="none" />
-            <path d="M6 6V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v2" stroke="currentColor" strokeWidth="1.5" fill="none" />
-          </svg>
-        </div>
+        <span className="text-[15px] font-medium text-black">9:41</span>
       </header>
 
       {/* Main content - centered */}
