@@ -36,10 +36,8 @@ def call_groq_vlm(image_data_url: str) -> Optional[str]:
 2. Prescription date
 3. Doctor/physician name and credentials
 4. All medications prescribed (names, dosages, frequencies)
-5. Medical conditions/diseases mentioned or indicated
-6. Any diagnosis codes (ICD codes) visible on the prescription
-7. Dosage instructions
-8. Any other relevant medical information
+5. Dosage instructions
+6. Any other relevant medical information
 
 Please be thorough and extract all text and medical information from the prescription."""
                 },
@@ -108,15 +106,13 @@ Please be thorough and extract all text and medical information from the prescri
                         "type": "text",
                         "text": """Based on the prescription analysis, please extract and provide the following information in a structured format:
 
-**Disease Name:** [The primary medical condition or diagnosis being treated. If multiple conditions, list the main one. If not explicitly stated, infer from the medication prescribed and its common uses.]
 
-**Disease ICD Code:** [The ICD-10 code for the disease/condition. Look for codes on the prescription (format: letter followed by numbers, e.g., R10, K59.0, I10). If not found on prescription, provide the most likely ICD-10 code based on the disease name and medication indication.]
 
 **Medicine Name:** [The full name(s) of the medication(s) prescribed. Include generic and brand names if both are present.]
 
 **Full Description:** [A comprehensive description of the prescription including patient details, medications, dosages, instructions, and any other relevant medical information.]
 
-Please be precise and accurate. For ICD codes, use standard ICD-10 format. If an ICD code is not visible on the prescription, infer the most appropriate code based on the medical condition and standard medical coding practices."""
+Please be precise and accurate. """
                     },
                     {
                         "type": "image_url",
