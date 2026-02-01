@@ -15,16 +15,10 @@ import ProfilePage from "../pages/ProfilePage.tsx";
 import ErrorBoundary from "../components/ErrorBoundary.tsx";
 
 export const router = createBrowserRouter([
-  // Root - shows landing page for unauthenticated, redirects authenticated users
-  {
-    path: "/",
-    element: <LandingRedirect />,
-    errorElement: <ErrorBoundary />,
-  },
-  // Landing page - direct access
+  // Landing page - for unauthenticated users
   {
     path: "/landing",
-    element: <LandingPage />,
+    element: <LandingRedirect />,
     errorElement: <ErrorBoundary />,
   },
   // Login - no navigation
@@ -39,9 +33,9 @@ export const router = createBrowserRouter([
     element: <OnboardingPage />,
     errorElement: <ErrorBoundary />,
   },
-  // Main app with navigation (protected routes)
+  // Main app with navigation
   {
-    path: "/app",
+    path: "/",
     element: <Layout />,
     errorElement: <ErrorBoundary />,
     children: [

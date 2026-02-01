@@ -49,7 +49,7 @@ function LoginPage() {
   useEffect(() => {
     // Redirect if already authenticated
     if (isAuthenticated) {
-      navigate("/app");
+      navigate("/");
       return;
     }
 
@@ -133,7 +133,7 @@ function LoginPage() {
       } else {
         console.log("Existing user, logging in...");
         login(result.access_token, result.user);
-        navigate("/app");
+        navigate("/");
       }
     } catch (err) {
       console.error("=== Login Error Details ===");

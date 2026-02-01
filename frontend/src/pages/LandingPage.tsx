@@ -11,7 +11,7 @@ function LandingPage() {
   useEffect(() => {
     // Redirect if already authenticated
     if (!isLoading && isAuthenticated) {
-      navigate("/app", { replace: true });
+      navigate("/", { replace: true });
       return;
     }
 
@@ -97,7 +97,9 @@ function LandingPage() {
           }`}
         >
           <p className="text-base md:text-lg text-black/80 leading-relaxed">
-            Navigate Korea's healthcare system with confidence. Get instant translations of your medical reports, find halal-friendly hospitals, and manage your health information—all in one place.
+            Navigate Korea's healthcare system with confidence. Get instant
+            translations of your medical reports, find halal-friendly hospitals,
+            and manage your health information—all in one place.
           </p>
           <div className="flex items-center justify-center gap-6 pt-4">
             <div className="flex items-center gap-2">
@@ -216,4 +218,3 @@ function LandingPage() {
 }
 
 export default LandingPage;
-

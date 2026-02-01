@@ -13,7 +13,7 @@ function LandingRedirect() {
 
   useEffect(() => {
     if (!isLoading && isAuthenticated) {
-      navigate("/app", { replace: true });
+      navigate("/", { replace: true });
     }
   }, [isAuthenticated, isLoading, navigate]);
 
@@ -39,4 +39,3 @@ function LandingRedirect() {
 }
 
 export default LandingRedirect;
-
