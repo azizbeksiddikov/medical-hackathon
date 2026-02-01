@@ -1,6 +1,11 @@
 import { useState, useRef } from "react";
-import { useNavigate } from "react-router-dom";
-import { reportsApi, ExtractedReport } from "../services/reportsApi";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import {
+  reportsApi,
+  ExtractedReport,
+  ReportType,
+} from "../services/reportsApi";
+import { ProcessingOverlay, ButtonLoading } from "../components/LoadingStates";
 
 type Step = "upload" | "extract" | "translate";
 
@@ -17,9 +22,29 @@ const LANGUAGES = [
   { code: "uz", name: "Uzbek (O'zbek)" },
 ];
 
+const REPORT_TYPE_INFO: Record<
+  ReportType,
+  { titleEn: string; titleKr: string }
+> = {
+  prescription: { titleEn: "Prescription", titleKr: "처방전" },
+  medical_certificate: { titleEn: "Medical Certificate", titleKr: "진단서" },
+  examination_report: {
+    titleEn: "Medical Examination Report",
+    titleKr: "검진서",
+  },
+};
+
 function AddReportPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Get report type from URL, default to prescription (will be overridden by detection)
+  const initialReportType =
+    (searchParams.get("type") as ReportType) || "prescription";
+  const [reportType, setReportType] = useState<ReportType>(initialReportType);
+  const reportTypeInfo =
+    REPORT_TYPE_INFO[reportType] || REPORT_TYPE_INFO.prescription;
 
   const [step, setStep] = useState<Step>("upload");
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
@@ -29,8 +54,12 @@ function AddReportPage() {
   );
   const [editedText, setEditedText] = useState("");
   const [targetLanguage, setTargetLanguage] = useState("en");
+  const [showImageModal, setShowImageModal] = useState(false);
   const [translatedText, setTranslatedText] = useState("");
   const [loading, setLoading] = useState(false);
+  const [loadingType, setLoadingType] = useState<
+    "extract" | "translate" | "save" | null
+  >(null);
   const [error, setError] = useState<string | null>(null);
 
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -71,11 +100,21 @@ function AddReportPage() {
     }
 
     setLoading(true);
+    setLoadingType("extract");
     setError(null);
 
     try {
       const data = await reportsApi.extractFromImage(selectedImage);
+      console.log("Extraction response:", data);
+      console.log("Image URL from server:", data.image_url);
+      console.log("Local imagePreview:", imagePreview);
       setExtractedData(data);
+
+      // Update report type if detected
+      if (data.report_type) {
+        console.log("Detected report type:", data.report_type);
+        setReportType(data.report_type);
+      }
 
       // Build text from extracted data
       let text = "";
@@ -95,6 +134,7 @@ function AddReportPage() {
       );
     } finally {
       setLoading(false);
+      setLoadingType(null);
     }
   };
 
@@ -105,6 +145,7 @@ function AddReportPage() {
     }
 
     setLoading(true);
+    setLoadingType("translate");
     setError(null);
 
     try {
@@ -123,11 +164,13 @@ function AddReportPage() {
       setStep("translate");
     } finally {
       setLoading(false);
+      setLoadingType(null);
     }
   };
 
   const handleSave = async () => {
     setLoading(true);
+    setLoadingType("save");
     setError(null);
 
     try {
@@ -135,6 +178,7 @@ function AddReportPage() {
       if (token && extractedData) {
         await reportsApi.saveReport(
           {
+            report_type: reportType,
             disease_name: extractedData.disease_name,
             disease_icd_code: extractedData.disease_icd_code,
             medicine_name: extractedData.medicine_name,
@@ -154,6 +198,7 @@ function AddReportPage() {
       navigate("/reports");
     } finally {
       setLoading(false);
+      setLoadingType(null);
     }
   };
 
@@ -167,14 +212,48 @@ function AddReportPage() {
     }
   };
 
+  const getLoadingInfo = () => {
+    switch (loadingType) {
+      case "extract":
+        return {
+          title: "Analyzing Image",
+          subtitle:
+            "Using AI to extract medical information from your document",
+        };
+      case "translate":
+        return {
+          title: "Translating",
+          subtitle: `Converting to ${
+            LANGUAGES.find((l) => l.code === targetLanguage)?.name ||
+            "selected language"
+          }`,
+        };
+      case "save":
+        return {
+          title: "Saving Report",
+          subtitle: "Securely storing your medical record",
+        };
+      default:
+        return { title: "Processing", subtitle: "Please wait..." };
+    }
+  };
+
   return (
     <div style={styles.container}>
+      {/* Processing Overlay */}
+      {loading && loadingType && (
+        <ProcessingOverlay
+          title={getLoadingInfo().title}
+          subtitle={getLoadingInfo().subtitle}
+        />
+      )}
+
       <div style={styles.header}>
         <button onClick={handleBack} style={styles.backButton}>
           ← Back
         </button>
         <h1 style={styles.title}>
-          {step === "upload" && "Upload Prescription"}
+          {step === "upload" && `Upload ${reportTypeInfo.titleEn}`}
           {step === "extract" && "Review & Edit"}
           {step === "translate" && "Translation"}
         </h1>
@@ -268,7 +347,8 @@ function AddReportPage() {
                 <div style={styles.uploadIcon}>📷</div>
                 <p style={styles.uploadText}>Click or drag to upload</p>
                 <p style={styles.uploadSubtext}>
-                  Upload your medical prescription image
+                  Upload your {reportTypeInfo.titleEn.toLowerCase()} image (
+                  {reportTypeInfo.titleKr})
                 </p>
               </div>
             )}
@@ -290,23 +370,101 @@ function AddReportPage() {
               opacity: !selectedImage || loading ? 0.5 : 1,
             }}
           >
-            {loading ? "Extracting..." : "Extract Text"}
+            {loading && loadingType === "extract" ? (
+              <ButtonLoading text="Analyzing..." />
+            ) : (
+              "Extract Text"
+            )}
           </button>
+        </div>
+      )}
+
+      {/* Image Modal */}
+      {showImageModal && (
+        <div
+          style={styles.modalOverlay}
+          onClick={() => {
+            console.log("Modal overlay clicked - closing");
+            setShowImageModal(false);
+          }}
+        >
+          <div style={styles.modalContent} onClick={(e) => e.stopPropagation()}>
+            <button
+              onClick={() => setShowImageModal(false)}
+              style={styles.modalCloseButton}
+            >
+              ×
+            </button>
+            {extractedData?.image_url || imagePreview ? (
+              <img
+                src={imagePreview || extractedData?.image_url || ""}
+                alt="Full size"
+                style={styles.modalImage}
+                onLoad={() => console.log("Image loaded successfully in modal")}
+                onError={(e) => {
+                  console.error("Image failed to load in modal");
+                  console.error(
+                    "Attempted URL:",
+                    imagePreview || extractedData?.image_url
+                  );
+                }}
+              />
+            ) : (
+              <div style={{ color: "#fff", padding: "20px", fontSize: "18px" }}>
+                No image available
+                <br />
+                <small>imagePreview: {imagePreview ? "set" : "null"}</small>
+                <br />
+                <small>
+                  extractedData?.image_url: {extractedData?.image_url || "null"}
+                </small>
+              </div>
+            )}
+          </div>
         </div>
       )}
 
       {/* Step 2: Extract & Edit */}
       {step === "extract" && (
         <div style={styles.stepContent}>
-          {/* Show server-stored image if available, otherwise local preview */}
+          {/* Report Type Selector */}
+          <div style={styles.typeSelector}>
+            <label style={styles.label}>Report Type</label>
+            <select
+              value={reportType}
+              onChange={(e) => setReportType(e.target.value as ReportType)}
+              style={styles.typeSelect}
+            >
+              <option value="prescription">Prescription (처방전)</option>
+              <option value="medical_certificate">
+                Medical Certificate (진단서)
+              </option>
+              <option value="examination_report">
+                Medical Examination Report (검진서)
+              </option>
+            </select>
+            {extractedData?.report_type &&
+              extractedData.report_type === reportType && (
+                <span style={styles.detectedBadge}>✓ Auto-detected</span>
+              )}
+          </div>
+
+          {/* View Image button */}
           {(extractedData?.image_url || imagePreview) && (
-            <div style={styles.thumbnailContainer}>
-              <img
-                src={extractedData?.image_url || imagePreview || ""}
-                alt="Uploaded"
-                style={styles.thumbnail}
-              />
-            </div>
+            <button
+              onClick={() => {
+                console.log("View Image clicked");
+                console.log("imagePreview:", imagePreview);
+                console.log(
+                  "extractedData?.image_url:",
+                  extractedData?.image_url
+                );
+                setShowImageModal(true);
+              }}
+              style={styles.viewImageButton}
+            >
+              🖼️ View Uploaded Image
+            </button>
           )}
 
           {extractedData && (
@@ -372,7 +530,11 @@ function AddReportPage() {
               opacity: loading || !editedText.trim() ? 0.5 : 1,
             }}
           >
-            {loading ? "Translating..." : "Translate"}
+            {loading && loadingType === "translate" ? (
+              <ButtonLoading text="Translating..." />
+            ) : (
+              "Translate"
+            )}
           </button>
         </div>
       )}
@@ -411,7 +573,11 @@ function AddReportPage() {
               disabled={loading}
               style={styles.primaryButton}
             >
-              {loading ? "Saving..." : "Save Report"}
+              {loading && loadingType === "save" ? (
+                <ButtonLoading text="Saving..." />
+              ) : (
+                "Save Report"
+              )}
             </button>
           </div>
         </div>
@@ -563,17 +729,85 @@ const styles: Record<string, React.CSSProperties> = {
     cursor: "pointer",
     fontSize: "0.85rem",
   },
-  thumbnailContainer: {
+  viewImageButton: {
+    backgroundColor: "#fff",
+    color: "#4CAF50",
+    padding: "12px 20px",
+    borderRadius: "10px",
+    border: "2px solid #4CAF50",
+    fontSize: "1rem",
+    cursor: "pointer",
+    fontWeight: "600",
+    transition: "all 0.2s ease",
     display: "flex",
+    alignItems: "center",
     justifyContent: "center",
-    marginBottom: "16px",
+    gap: "8px",
+    width: "100%",
   },
-  thumbnail: {
-    maxWidth: "150px",
-    maxHeight: "100px",
+  typeSelector: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "8px",
+    marginBottom: "8px",
+  },
+  typeSelect: {
+    padding: "14px 16px",
+    borderRadius: "12px",
+    border: "2px solid #4CAF50",
+    fontSize: "1rem",
+    backgroundColor: "#fff",
+    cursor: "pointer",
+    fontWeight: "500",
+    color: "#333",
+  },
+  detectedBadge: {
+    fontSize: "0.85rem",
+    color: "#4CAF50",
+    fontWeight: "500",
+    marginTop: "4px",
+  },
+  modalOverlay: {
+    position: "fixed",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "rgba(0, 0, 0, 0.85)",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    zIndex: 1000,
+    padding: "20px",
+  },
+  modalContent: {
+    position: "relative",
+    maxWidth: "90vw",
+    maxHeight: "90vh",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(0,0,0,0.5)",
+    borderRadius: "12px",
+    padding: "20px",
+  },
+  modalCloseButton: {
+    position: "absolute",
+    top: "-40px",
+    right: "0",
+    backgroundColor: "transparent",
+    color: "#fff",
+    border: "none",
+    fontSize: "2rem",
+    cursor: "pointer",
+    padding: "8px",
+    lineHeight: "1",
+  },
+  modalImage: {
+    maxWidth: "100%",
+    maxHeight: "85vh",
     borderRadius: "8px",
-    objectFit: "cover",
-    border: "1px solid #ddd",
+    objectFit: "contain",
   },
   extractedInfo: {
     backgroundColor: "#f8f9fa",

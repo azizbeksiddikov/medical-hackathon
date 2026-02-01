@@ -1,6 +1,65 @@
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "/api";
+// Get the base URL and append /api for API calls
+// Always use relative URLs when on HTTPS to prevent mixed content errors
+const getApiBaseUrl = () => {
+  const currentHost = window.location.hostname;
+  const currentProtocol = window.location.protocol;
+  const isHttps = currentProtocol === "https:";
+  
+  // Local development - use explicit localhost URL
+  if (
+    currentHost === "localhost" ||
+    currentHost === "127.0.0.1"
+  ) {
+    return "http://localhost:9090/api";
+  }
+  
+  // CRITICAL: When on HTTPS, ALWAYS use relative URL to prevent mixed content errors
+  // This ensures the browser uses the same protocol as the current page
+  if (isHttps) {
+    // Force relative URL - never use absolute URLs when on HTTPS
+    return "/api";
+  }
+  
+  // HTTP page - use env URL if set, otherwise relative
+  const envUrl = import.meta.env.VITE_API_BASE_URL;
+  if (envUrl && !envUrl.startsWith("http://152.42.238.178")) {
+    // Only use env URL if it's not the problematic IP
+    return `${envUrl}/api`;
+  }
+  
+  // Default to relative URL
+  return "/api";
+};
+
+// Compute API base URL dynamically to ensure it's always correct
+const getApiBaseUrlDynamic = () => {
+  const url = getApiBaseUrl();
+  const currentProtocol = window.location.protocol;
+  
+  // CRITICAL SAFETY CHECK: Never allow HTTP URLs on HTTPS pages
+  if (currentProtocol === "https:") {
+    if (url.startsWith("http://")) {
+      console.error("SECURITY BLOCK: Attempted to use HTTP URL on HTTPS page:", url);
+      console.error("Forcing relative URL to prevent mixed content error");
+      return "/api";
+    }
+    // Also ensure we're using relative URLs when on HTTPS
+    if (!url.startsWith("/") && !url.startsWith("https://")) {
+      console.warn("Non-standard URL format on HTTPS, using relative:", url);
+      return "/api";
+    }
+  }
+  
+  return url;
+};
+
+export type ReportType =
+  | "prescription"
+  | "medical_certificate"
+  | "examination_report";
 
 export interface ExtractedReport {
+  report_type: ReportType | null; // Detected report type from image analysis
   disease_name: string | null;
   disease_icd_code: string | null;
   medicine_name: string | null;
@@ -10,6 +69,7 @@ export interface ExtractedReport {
 
 export interface SavedReport {
   id: string;
+  report_type: ReportType;
   disease_name: string | null;
   disease_icd_code: string | null;
   medicine_name: string | null;
@@ -25,8 +85,9 @@ export const reportsApi = {
   async extractFromImage(imageFile: File): Promise<ExtractedReport> {
     const formData = new FormData();
     formData.append("file", imageFile);
+    const apiBaseUrl = getApiBaseUrlDynamic();
 
-    const response = await fetch(`${API_BASE_URL}/extract-icd`, {
+    const response = await fetch(`${apiBaseUrl}/extract-icd`, {
       method: "POST",
       body: formData,
     });
@@ -42,7 +103,8 @@ export const reportsApi = {
   },
 
   async translateText(text: string, targetLanguage: string): Promise<string> {
-    const response = await fetch(`${API_BASE_URL}/translate`, {
+    const apiBaseUrl = getApiBaseUrlDynamic();
+    const response = await fetch(`${apiBaseUrl}/translate`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -65,7 +127,8 @@ export const reportsApi = {
     report: Omit<SavedReport, "id" | "created_at">,
     token: string
   ): Promise<SavedReport> {
-    const response = await fetch(`${API_BASE_URL}/reports`, {
+    const apiBaseUrl = getApiBaseUrlDynamic();
+    const response = await fetch(`${apiBaseUrl}/reports`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -83,7 +146,8 @@ export const reportsApi = {
   },
 
   async getReports(token: string): Promise<SavedReport[]> {
-    const response = await fetch(`${API_BASE_URL}/reports`, {
+    const apiBaseUrl = getApiBaseUrlDynamic();
+    const response = await fetch(`${apiBaseUrl}/reports`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -100,7 +164,8 @@ export const reportsApi = {
   },
 
   async getReport(id: string, token: string): Promise<SavedReport> {
-    const response = await fetch(`${API_BASE_URL}/reports/${id}`, {
+    const apiBaseUrl = getApiBaseUrlDynamic();
+    const response = await fetch(`${apiBaseUrl}/reports/${id}`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -117,7 +182,8 @@ export const reportsApi = {
   },
 
   async deleteReport(id: string, token: string): Promise<void> {
-    const response = await fetch(`${API_BASE_URL}/reports/${id}`, {
+    const apiBaseUrl = getApiBaseUrlDynamic();
+    const response = await fetch(`${apiBaseUrl}/reports/${id}`, {
       method: "DELETE",
       headers: {
         Authorization: `Bearer ${token}`,

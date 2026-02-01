@@ -34,3 +34,15 @@ def init_db():
     # Import models to register them with Base.metadata
     from app.models import User, Report  # noqa: F401
     Base.metadata.create_all(bind=engine)
+    
+    # Run migrations
+    run_migrations()
+
+
+def run_migrations():
+    """Run database migrations."""
+    try:
+        from app.migrations.add_report_type import migrate as add_report_type_migration
+        add_report_type_migration()
+    except Exception as e:
+        print(f"Migration error: {e}")

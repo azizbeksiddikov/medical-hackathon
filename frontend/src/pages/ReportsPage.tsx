@@ -1,302 +1,77 @@
-import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { reportsApi, SavedReport } from "../services/reportsApi";
+import { ReportType } from "../services/reportsApi";
+import prescriptionIcon from "../public/images/prescription.svg";
+import medicalIcon from "../public/images/medical.svg";
+import examIcon from "../public/images/exam.svg";
+import rightIcon from "../public/images/right.svg";
+
+interface ReportSection {
+  type: ReportType;
+  titleEn: string;
+  titleKr: string;
+  icon: string;
+}
+
+const reportSections: ReportSection[] = [
+  {
+    type: "prescription",
+    titleEn: "Prescription",
+    titleKr: "처방전",
+    icon: prescriptionIcon,
+  },
+  {
+    type: "medical_certificate",
+    titleEn: "Medical Certificate",
+    titleKr: "진단서",
+    icon: medicalIcon,
+  },
+  {
+    type: "examination_report",
+    titleEn: "Medical Examination Report",
+    titleKr: "검진서",
+    icon: examIcon,
+  },
+];
 
 function ReportsPage() {
-  const [reports, setReports] = useState<SavedReport[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    loadReports();
-  }, []);
-
-  const loadReports = async () => {
-    try {
-      setLoading(true);
-      const token = localStorage.getItem("auth_token");
-      if (token) {
-        const data = await reportsApi.getReports(token);
-        setReports(data);
-      } else {
-        // For demo, show empty state without token
-        setReports([]);
-      }
-    } catch (err) {
-      // API might not be implemented yet, show empty state
-      console.log("Reports API not available yet:", err);
-      setReports([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleDelete = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this report?")) return;
-
-    try {
-      const token = localStorage.getItem("auth_token");
-      if (token) {
-        await reportsApi.deleteReport(id, token);
-        setReports(reports.filter((r) => r.id !== id));
-      }
-    } catch (err) {
-      setError("Failed to delete report");
-    }
-  };
-
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    });
-  };
-
   return (
-    <div style={styles.container}>
-      <div style={styles.header}>
-        <h1 style={styles.title}>MY REPORTS</h1>
-        <Link to="/reports/add" style={styles.addButton}>
-          Add Report +
-        </Link>
-      </div>
+    <div className="p-6 max-w-3xl mx-auto min-h-[80vh]">
+      <h1 className="text-[1.75rem] font-bold text-gray-800 mb-8">
+        MY REPORTS
+      </h1>
 
-      {loading ? (
-        <div style={styles.loadingContainer}>
-          <p style={styles.loadingText}>Loading reports...</p>
-        </div>
-      ) : error ? (
-        <div style={styles.errorContainer}>
-          <p style={styles.errorText}>{error}</p>
-        </div>
-      ) : reports.length === 0 ? (
-        <div style={styles.emptyContainer}>
-          <div style={styles.emptyIcon}>📋</div>
-          <h2 style={styles.emptyTitle}>No Reports Yet</h2>
-          <p style={styles.emptyText}>
-            Upload your medical prescriptions to extract and translate important
-            information.
-          </p>
-          <Link to="/reports/add" style={styles.emptyAddButton}>
-            Add Your First Report
-          </Link>
-        </div>
-      ) : (
-        <div style={styles.reportsList}>
-          {reports.map((report) => (
-            <div key={report.id} style={styles.reportCard}>
-              <div style={styles.reportHeader}>
-                <div style={styles.reportInfo}>
-                  <h3 style={styles.reportTitle}>
-                    {report.disease_name || "Medical Report"}
-                  </h3>
-                  {report.disease_icd_code && (
-                    <span style={styles.icdBadge}>
-                      ICD: {report.disease_icd_code}
-                    </span>
-                  )}
-                </div>
-                <span style={styles.reportDate}>
-                  {formatDate(report.created_at)}
+      <div className="flex flex-col gap-4">
+        {reportSections.map((section) => (
+          <Link
+            key={section.type}
+            to={`/reports/type/${section.type}`}
+            className="flex items-center justify-between bg-[#f2f2f2] rounded-2xl px-6 py-5 shadow-sm border border-gray-100 no-underline text-inherit transition-all hover:shadow-md"
+          >
+            <div className="flex items-center gap-4">
+              <img src={section.icon} alt="" className="w-8 h-8" />
+              <div className="flex flex-col gap-1">
+                <span className="text-[25px] font-semibold text-gray-800">
+                  {section.titleEn}
+                </span>
+                <span className="text-base font-normal text-gray-500">
+                  {section.titleKr}
                 </span>
               </div>
-
-              {report.medicine_name && (
-                <p style={styles.medicineName}>
-                  <strong>Medicine:</strong> {report.medicine_name}
-                </p>
-              )}
-
-              {report.full_description && (
-                <p style={styles.reportDescription}>
-                  {report.full_description.slice(0, 150)}
-                  {report.full_description.length > 150 && "..."}
-                </p>
-              )}
-
-              <div style={styles.reportActions}>
-                <Link to={`/reports/${report.id}`} style={styles.viewButton}>
-                  View Details
-                </Link>
-                <button
-                  onClick={() => handleDelete(report.id)}
-                  style={styles.deleteButton}
-                >
-                  Delete
-                </button>
-              </div>
             </div>
-          ))}
-        </div>
-      )}
+            <img src={rightIcon} alt="" className="w-6 h-6 opacity-50" />
+          </Link>
+        ))}
+      </div>
+
+      {/* Add Report Button */}
+      <Link
+        to="/reports/add"
+        className="block mt-8 bg-green-500 hover:bg-green-600 text-white text-center py-4 px-6 rounded-xl font-semibold text-base transition-all"
+      >
+        Add Report +
+      </Link>
     </div>
   );
 }
-
-const styles: Record<string, React.CSSProperties> = {
-  container: {
-    padding: "24px",
-    maxWidth: "800px",
-    margin: "0 auto",
-    minHeight: "80vh",
-  },
-  header: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: "32px",
-  },
-  title: {
-    fontSize: "1.75rem",
-    fontWeight: "700",
-    color: "#333",
-    margin: 0,
-  },
-  addButton: {
-    backgroundColor: "#4CAF50",
-    color: "#ffffff",
-    padding: "12px 24px",
-    borderRadius: "12px",
-    textDecoration: "none",
-    fontWeight: "600",
-    fontSize: "0.95rem",
-    transition: "all 0.2s ease",
-  },
-  loadingContainer: {
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
-    minHeight: "300px",
-  },
-  loadingText: {
-    color: "#666",
-    fontSize: "1rem",
-  },
-  errorContainer: {
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
-    minHeight: "300px",
-  },
-  errorText: {
-    color: "#e74c3c",
-    fontSize: "1rem",
-  },
-  emptyContainer: {
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    justifyContent: "center",
-    minHeight: "400px",
-    textAlign: "center",
-    padding: "40px",
-  },
-  emptyIcon: {
-    fontSize: "4rem",
-    marginBottom: "16px",
-  },
-  emptyTitle: {
-    fontSize: "1.5rem",
-    fontWeight: "600",
-    color: "#333",
-    marginBottom: "8px",
-  },
-  emptyText: {
-    color: "#666",
-    fontSize: "1rem",
-    maxWidth: "400px",
-    marginBottom: "24px",
-    lineHeight: "1.6",
-  },
-  emptyAddButton: {
-    backgroundColor: "#4CAF50",
-    color: "#ffffff",
-    padding: "14px 32px",
-    borderRadius: "12px",
-    textDecoration: "none",
-    fontWeight: "600",
-    fontSize: "1rem",
-  },
-  reportsList: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "16px",
-  },
-  reportCard: {
-    backgroundColor: "#ffffff",
-    borderRadius: "16px",
-    padding: "20px",
-    boxShadow: "0 2px 8px rgba(0, 0, 0, 0.08)",
-    border: "1px solid #eee",
-  },
-  reportHeader: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    marginBottom: "12px",
-  },
-  reportInfo: {
-    display: "flex",
-    alignItems: "center",
-    gap: "12px",
-    flexWrap: "wrap" as const,
-  },
-  reportTitle: {
-    fontSize: "1.1rem",
-    fontWeight: "600",
-    color: "#333",
-    margin: 0,
-  },
-  icdBadge: {
-    backgroundColor: "#e8f5e9",
-    color: "#2E7D32",
-    padding: "4px 10px",
-    borderRadius: "20px",
-    fontSize: "0.8rem",
-    fontWeight: "500",
-  },
-  reportDate: {
-    color: "#888",
-    fontSize: "0.85rem",
-  },
-  medicineName: {
-    color: "#444",
-    fontSize: "0.95rem",
-    marginBottom: "8px",
-  },
-  reportDescription: {
-    color: "#666",
-    fontSize: "0.9rem",
-    lineHeight: "1.5",
-    marginBottom: "16px",
-  },
-  reportActions: {
-    display: "flex",
-    gap: "12px",
-    paddingTop: "12px",
-    borderTop: "1px solid #eee",
-  },
-  viewButton: {
-    backgroundColor: "#f5f5f5",
-    color: "#333",
-    padding: "8px 16px",
-    borderRadius: "8px",
-    textDecoration: "none",
-    fontSize: "0.9rem",
-    fontWeight: "500",
-  },
-  deleteButton: {
-    backgroundColor: "transparent",
-    color: "#e74c3c",
-    padding: "8px 16px",
-    borderRadius: "8px",
-    border: "1px solid #e74c3c",
-    cursor: "pointer",
-    fontSize: "0.9rem",
-    fontWeight: "500",
-  },
-};
 
 export default ReportsPage;

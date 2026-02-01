@@ -1,6 +1,37 @@
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 
+// Get the backend base URL for static files (uploads)
+const getBackendBaseUrl = () => {
+  const envUrl = import.meta.env.VITE_API_BASE_URL;
+  if (envUrl) {
+    return envUrl;
+  }
+  if (
+    window.location.hostname === "localhost" ||
+    window.location.hostname === "127.0.0.1"
+  ) {
+    return "http://localhost:9090";
+  }
+  return "";
+};
+
+const BACKEND_BASE_URL = getBackendBaseUrl();
+
+// Get the full image URL - handles both Google URLs and uploaded images
+const getProfileImageUrl = (picture?: string) => {
+  if (!picture) return null;
+  // If it's already a full URL (Google, etc.), use as-is
+  if (picture.startsWith("http://") || picture.startsWith("https://")) {
+    return picture;
+  }
+  // If it's a relative path (uploaded image), prepend backend URL
+  if (picture.startsWith("/uploads/")) {
+    return `${BACKEND_BASE_URL}${picture}`;
+  }
+  return picture;
+};
+
 const languageLabels: Record<string, string> = {
   en: "English",
   ko: "한국어",
@@ -64,9 +95,9 @@ function ProfilePage() {
       <div className="flex flex-col items-center mb-8">
         {/* Profile Picture */}
         <div className="relative mb-4">
-          {user.picture ? (
+          {getProfileImageUrl(user.picture) ? (
             <img
-              src={user.picture}
+              src={getProfileImageUrl(user.picture)!}
               alt={user.name || "Profile"}
               className="w-24 h-24 rounded-full object-cover border-4 border-primary/20 shadow-lg"
             />

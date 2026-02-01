@@ -1,12 +1,12 @@
 import { useState } from "react";
-import { NavLink } from "react-router-dom";
+import { NavLink, Link } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import smallLogo from "../public/images/small_logo.svg";
 
 import homeIcon from "../public/images/shopping_cart.svg";
 import homeIconActive from "../public/images/shopping_cart_active.svg";
-import hospitalIcon from "../public/images/calendar.svg";
-import hospitalIconActive from "../public/images/calendar_active.svg";
+// import hospitalIcon from "../public/images/calendar.svg";
+// import hospitalIconActive from "../public/images/calendar_active.svg";
 import reportIcon from "../public/images/notification_no_alert.svg";
 import reportIconActive from "../public/images/notification_no_alert_active.svg";
 import reportIconAlert from "../public/images/notification.svg";
@@ -15,13 +15,13 @@ import myIcon from "../public/images/user_profile.svg";
 import myIconActive from "../public/images/user_profile_active.svg";
 
 const baseNavItems = [
-  { path: "/app", label: "Home", icon: homeIcon, iconActive: homeIconActive },
-  {
-    path: "/app/hospitals",
-    label: "Hospital",
-    icon: hospitalIcon,
-    iconActive: hospitalIconActive,
-  },
+  { path: "/", label: "Home", icon: homeIcon, iconActive: homeIconActive },
+  // {
+  //   path: "/hospitals",
+  //   label: "Hospital",
+  //   icon: hospitalIcon,
+  //   iconActive: hospitalIconActive,
+  // },
   {
     path: "/app/reports",
     label: "Report",
@@ -59,10 +59,10 @@ function Navigation() {
     <>
       <nav className="flex items-center justify-between px-6 py-4 bg-white border-b border-gray-200 relative z-50">
         {/* Logo & Brand */}
-        <div className="flex items-center gap-3">
+        <Link to="/" className="flex items-center gap-3 no-underline">
           <img src={smallLogo} alt="Logo" className="w-9 h-9" />
           <span className="text-xl font-bold text-primary">MediPort</span>
-        </div>
+        </Link>
 
         {/* Desktop Navigation - hidden on mobile, flex on md+ */}
         <ul className="hidden md:flex gap-2 list-none m-0 p-0">
