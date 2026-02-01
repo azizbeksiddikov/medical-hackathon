@@ -14,14 +14,15 @@ export default defineConfig({
       "halalhave.kr",
       "localhost",
       "127.0.0.1",
+      "mediport.azbek.me",
     ],
     watch: {
       usePolling: true,
     },
     headers: {
       "Cache-Control": "no-cache, no-store, must-revalidate",
-      "Pragma": "no-cache",
-      "Expires": "0",
+      Pragma: "no-cache",
+      Expires: "0",
     },
   },
 });
